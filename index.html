@@ -1,0 +1,71 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>AgriSahayak 360</title>
+<style>
+body {font-family: Arial; margin: 20px;}
+.card {border: 1px solid #ccc; padding: 12px; margin-bottom: 12px;}
+</style>
+</head>
+<body>
+<h1>AgriSahayak 360</h1>
+<p>Smart farming assistant — soil test, irrigation control, live sensors.</p>
+
+<div class="card">
+<h3>Live Sensor Data</h3>
+<pre id="sensor">Loading...</pre>
+<button onclick="loadSensor()">Refresh</button>
+</div>
+
+<div class="card">
+<h3>Irrigation Control</h3>
+<button onclick="setIrr('on')">POWER ON</button>
+<button onclick="setIrr('off')">POWER OFF</button>
+<pre id="irrinfo"></pre>
+</div>
+
+<div class="card">
+<h3>Soil Test</h3>
+<form onsubmit="return soilTest()">
+pH: <input id="ph" value="6.5"><br>
+N: <input id="n" value="40"><br>
+P: <input id="p" value="30"><br>
+K: <input id="k" value="25"><br>
+Acres: <input id="a" value="1"><br><br>
+<button type="submit">Get Recommend</button>
+</form>
+<pre id="soilout"></pre>
+</div>
+
+<script>
+API="http://localhost:8000";
+
+async function loadSensor(){
+    let r = await fetch(API+"/ping");
+    let d = await r.json();
+    document.getElementById("sensor").textContent = JSON.stringify(d.sensor,null,2);
+    document.getElementById("irrinfo").textContent = "Irrigation: "+(d.irrigation?"ON":"OFF");
+}
+
+async function setIrr(a){
+    let r = await fetch(API+"/irrigation",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:a})});
+    loadSensor();
+}
+
+async function soilTest(){
+    let body={
+        ph:parseFloat(ph.value), nitrogen:parseFloat(n.value),
+        phosphorus:parseFloat(p.value), potassium:parseFloat(k.value),
+        field_area_acres:parseFloat(a.value)
+    };
+    let r = await fetch(API+"/soiltest",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    let d = await r.json();
+    document.getElementById("soilout").textContent=JSON.stringify(d.recommendations,null,2);
+    return false;
+}
+
+loadSensor();
+</script>
+</body>
+</html>
